@@ -45,11 +45,18 @@ const packageSchema = new mongoose.Schema({
     enum: ["Pending", "In Transit", "Delivered", "Cancelled"],
     default: "Pending",
   },
-
+  paymentMethod: {
+    type: String,
+    required: true,
+  },
   paymentStatus: {
     type: String,
     enum: ["Paid", "Unpaid"],
     default: "Unpaid",
+  },
+  priceOffer: {
+    type: Number,
+    required: true,
   },
 
   deliveryPersonId: {
