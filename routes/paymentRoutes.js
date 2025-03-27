@@ -1,15 +1,11 @@
 const express = require("express");
+const router = express.Router();
 const {
-  initializePayment,
+  initiatePayment,
   verifyPayment,
 } = require("../controllers/paymentController");
 
-const router = express.Router();
-
-// Initialize Payment
-router.post("/initialize", initializePayment);
-
-// Verify Payment
+router.post("/initiate", initiatePayment);
 router.get("/verify/:reference", verifyPayment);
 
 module.exports = router;

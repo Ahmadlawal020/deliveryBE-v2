@@ -181,9 +181,16 @@ const updateBalance = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "User not found" });
   }
 
+  // 🚫 Prevent deposits from this endpoint
   if (type === "deposit") {
-    user.balance += amount;
-  } else if (type === "transaction") {
+    return res.status(403).json({
+      message:
+        "Deposit is not allowed here. Use /paystack/verify/:reference instead.",
+    });
+  }
+
+  // ✅ Allow transaction deduction only
+  if (type === "transaction") {
     if (user.balance < amount) {
       return res.status(400).json({ message: "Insufficient balance" });
     }

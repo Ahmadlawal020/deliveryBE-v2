@@ -40,5 +40,5 @@ router
   .post(createNewUser)
   .patch(updateUser)
   .delete(deleteUser); // Only admins can delete users
-router.patch("/balance", updateBalance);
+router.route("/balance").patch(updateBalance);
 module.exports = router;

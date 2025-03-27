@@ -1,42 +1,99 @@
 const axios = require("axios");
+const User = require("../models/User");
 
-const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
-const paystack = axios.create({
-  baseURL: "https://api.paystack.co",
-  headers: {
-    Authorization: `Bearer ${PAYSTACK_SECRET_KEY}`,
-    "Content-Type": "application/json",
-  },
-});
+// @desc Initialize Paystack payment
+// @route POST /paystack/initiate
+// @access Private
+const initiatePayment = async (req, res) => {
+  const { email, amount } = req.body;
 
-// Initialize Payment
-const initializePayment = async (req, res) => {
+  if (!email || !amount) {
+    return res.status(400).json({ message: "Email and amount are required" });
+  }
+
   try {
-    const { email, amount } = req.body;
+    const response = await axios.post(
+      "https://api.paystack.co/transaction/initialize",
+      {
+        email,
+        amount: amount * 100, // Paystack works with kobo (i.e., Naira * 100)
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    const response = await paystack.post("/transaction/initialize", {
-      email,
-      amount: amount * 100, // Paystack expects amount in kobo
-    });
-
-    res.json(response.data);
+    res.status(200).json(response.data);
   } catch (error) {
-    console.error("Error initializing payment:", error);
-    res.status(500).json({ error: "Payment initialization failed" });
+    res.status(500).json({ message: "Payment initialization failed", error });
   }
 };
+// @desc Verify Paystack payment
+// @route GET /paystack/verify/:reference
+// @access Private
 
-// Verify Payment
 const verifyPayment = async (req, res) => {
-  try {
-    const { reference } = req.params;
+  const { reference } = req.params;
 
-    const response = await paystack.get(`/transaction/verify/${reference}`);
-    res.json(response.data);
+  try {
+    const response = await axios.get(
+      `https://api.paystack.co/transaction/verify/${reference}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+        },
+      }
+    );
+
+    const data = response.data;
+
+    if (data.data.status === "success") {
+      const userEmail = data.data.customer.email;
+      const amountPaid = data.data.amount / 100;
+      const paystackRef = data.data.reference;
+
+      const user = await User.findOne({ email: userEmail }).exec();
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Prevent double processing
+      if (user.processedReferences?.includes(paystackRef)) {
+        return res.status(200).json({
+          message: "Payment already processed",
+          balance: user.balance,
+          depositedAmount: 0,
+        });
+      }
+
+      // Deposit the amount ONCE
+      user.balance += amountPaid;
+      user.processedReferences = user.processedReferences || [];
+      user.processedReferences.push(paystackRef);
+
+      await user.save();
+
+      return res.status(200).json({
+        message: "Payment verified and balance updated",
+        balance: user.balance,
+        depositedAmount: amountPaid,
+      });
+    } else {
+      return res.status(400).json({ message: "Payment verification failed" });
+    }
   } catch (error) {
-    console.error("Error verifying payment:", error);
-    res.status(500).json({ error: "Payment verification failed" });
+    console.error("Verification error:", error.message);
+    return res
+      .status(500)
+      .json({ message: "Server error during verification" });
   }
 };
+module.exports = {
+  initiatePayment,
+  verifyPayment,
+};
 
-module.exports = { initializePayment, verifyPayment };
+// controllers/paystackController.js
