@@ -1,6 +1,8 @@
 const allowedOrigins = [
   "https://moveitasp.netlify.app",
-  // "http://localhost:5173",
+  "http://ridedelivery.co.uk",
+  "www.ridedelivery.co.uk",
+  "ridedelivery.co.uk",
   "moveitasp.netlify.app",
   "www.moveitasp.netlify.app",
 ];
