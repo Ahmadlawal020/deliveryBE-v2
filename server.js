@@ -1,7 +1,7 @@
 const app = require("./app");
 const mongoose = require("mongoose");
 const { logEvents } = require("./middleware/logger");
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 mongoose.connection.once("open", () => {
   console.log("connected to MongoDB");
