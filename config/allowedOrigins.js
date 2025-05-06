@@ -2,8 +2,9 @@ const allowedOrigins = [
   "http://ridedelivery.co.uk",
   "www.ridedelivery.co.uk",
   "ridedelivery.co.uk",
-  "moveitasp.netlify.app",
-  "www.moveitasp.netlify.app",
+  "https://ridedelivery.netlify.app",
+  "ridedelivery.netlify.app",
+  "www.ridedelivery.netlify.app",
 ];
 
 module.exports = allowedOrigins;
